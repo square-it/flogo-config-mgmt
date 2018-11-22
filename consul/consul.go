@@ -30,7 +30,7 @@ func (resolver *SimpleConsulKVValueResolver) ResolveValue(toResolve string) (int
 
 	var value interface{}
 
-	if err != nil {
+	if err != nil || pair == nil {
 		logger.Warnf("Variable '%s' is not found in Consul", toResolve)
 
 		value = "$" + toResolve

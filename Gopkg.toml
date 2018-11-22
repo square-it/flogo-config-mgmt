@@ -1,7 +1,0 @@
-[prune]
-  go-tests = true
-
-[[override]]
-  name = "github.com/TIBCOSoftware/flogo-lib"
-  branch = "external-config-mgmt"
-  source = "github.com/debovema/flogo-lib"
