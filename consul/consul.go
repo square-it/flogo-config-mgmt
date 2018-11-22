@@ -1,8 +1,6 @@
 package consul
 
 import (
-	"errors"
-	"fmt"
 	"github.com/TIBCOSoftware/flogo-lib/app"
 	"github.com/TIBCOSoftware/flogo-lib/logger"
 	"github.com/hashicorp/consul/api"
@@ -30,11 +28,15 @@ func (resolver *SimpleConsulKVValueResolver) ResolveValue(toResolve string) (int
 
 	pair, _, err := kv.Get(key, nil)
 
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Variable %s is not found in Consul", toResolve))
-	}
+	var value interface{}
 
-	value := string(pair.Value)
+	if err != nil {
+		logger.Warnf("Variable '%s' is not found in Consul", toResolve)
+
+		value = "$" + toResolve
+	} else {
+		value = string(pair.Value)
+	}
 
 	return value, nil
 }
