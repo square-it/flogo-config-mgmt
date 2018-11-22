@@ -19,7 +19,7 @@ func init() {
 	app.RegisterPropertyValueResolver("consul", &SimpleConsulKVValueResolver{})
 }
 
-// Resolve property value from environment variable
+// Resolve property value from a Consul KV Store
 type SimpleConsulKVValueResolver struct {
 }
 
