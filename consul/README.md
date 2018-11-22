@@ -1,21 +1,23 @@
 # Centralized configuration management for Flogo with a Consul KV Store 
 
+> **WARNING**: This contribution is in an experimental state and uses a patched version of _TIBCOSoftware/flogo-lib_.
+
 ## Usage
 
 ### Create a Flogo project
 
-1.
+1. create a simple Flogo project and enter in its directory
 ```
 flogo create simple-config
 cd simple-config
 ```
 
-2.
+2. install this contribution
 ```
 flogo install -v simple-consul-kv github.com/square-it/flogo-config-mgmt/consul
 ```
 
-3.
+3. use patched version of TIBCOSoftware/flogo-lib
 ```
 cat << EOF >> ./src/simple-config/Gopkg.toml                                                    
 
@@ -27,17 +29,17 @@ cat << EOF >> ./src/simple-config/Gopkg.toml
 EOF
 ```
 
-4.
+4. ensure dependencies
 ```
 flogo ensure
 ```
 
-5.
+5. add a property ```message``` and use it in the log activity
 ```
 cat flogo.json | jq '. + {"properties": [{"name": "message", "type": "string", "value": "Default message"}]}' | jq '.resources[].data.tasks[].activity |= . + {"mappings": {"input": [{"type": "assign", "value": "$property.message", "mapTo": "message"}]}}' | jq '.resources[].data.tasks[].activity.input |= del(.message)' > flogo.json.tmp && mv flogo.json.tmp flogo.json
 ```
 
-6.
+6. build the application
 ```
 flogo build -e
 ```
@@ -49,10 +51,12 @@ flogo build -e
 docker run -d --name=dev-consul -e CONSUL_BIND_INTERFACE=eth0 -p 8500:8500 consul
 ```
 
-2. add a property in Consul 
+2. add a value for the property ```message``` in Consul 
 ```
 docker exec -t dev-consul consul kv put flogo/simple-config/message "Consul message"
 ```
+
+The key is prefixed by ```flogo``` and by the application name (```simple-config```).
 
 ### Run & test 
 
