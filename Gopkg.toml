@@ -1,7 +1,7 @@
 [prune]
   go-tests = true
 
-[[constraint]]
+[[override]]
   name = "github.com/TIBCOSoftware/flogo-lib"
   branch = "external-config-mgmt"
   source = "github.com/debovema/flogo-lib"
