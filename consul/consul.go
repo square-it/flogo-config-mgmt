@@ -6,17 +6,23 @@ import (
 	"github.com/hashicorp/consul/api"
 )
 
-var kv *api.KV
+var (
+	kv  *api.KV
+	log = logger.GetLogger("config-mgmt-consul-kv")
+)
 
 func init() {
 	client, err := api.NewClient(api.DefaultConfig())
 	if err != nil {
-		logger.Error("Unable to initialize Consul resolver for configuration management")
+		log.Error("Unable to initialize Consul property resolver for configuration management.")
 	}
 
 	kv = client.KV()
 
-	app.RegisterPropertyValueResolver("consul", &SimpleConsulKVValueResolver{})
+	err = app.RegisterPropertyValueResolver("consul", &SimpleConsulKVValueResolver{})
+	if err != nil {
+		log.Error("Unable to register Consul property resolver for configuration management.")
+	}
 }
 
 // Resolve property value from a Consul KV Store
@@ -31,9 +37,9 @@ func (resolver *SimpleConsulKVValueResolver) ResolveValue(toResolve string) (int
 	var value interface{}
 
 	if err != nil || pair == nil {
-		logger.Warnf("Variable '%s' is not found in Consul", toResolve)
+		log.Warnf("Property '%s' is not found in Consul.", toResolve)
 
-		value = "$" + toResolve
+		value = nil // will use default value
 	} else {
 		value = string(pair.Value)
 	}
