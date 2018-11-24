@@ -82,7 +82,6 @@ INFO   [activity-flogo-log] - Default message
 1. set following environment variables
 ```
 export CONSUL_HTTP_ADDR=127.0.0.1:8500
-export FLOGO_APP_PROPS_OVERRIDE=consul
 export FLOGO_APP_PROPS_VALUE_RESOLVER=consul
 ```
 
