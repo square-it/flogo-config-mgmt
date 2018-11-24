@@ -24,7 +24,7 @@ cat << EOF >> ./src/simple-config/Gopkg.toml
 [[override]]
   name = "github.com/TIBCOSoftware/flogo-lib"
   branch = "external-config-mgmt"
-  source = "github.com/debovema/flogo-lib"
+  source = "github.com/square-it/flogo-lib"
 
 EOF
 ```
