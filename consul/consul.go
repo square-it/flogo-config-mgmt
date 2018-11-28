@@ -4,6 +4,7 @@ import (
 	"github.com/TIBCOSoftware/flogo-lib/app"
 	"github.com/TIBCOSoftware/flogo-lib/logger"
 	"github.com/hashicorp/consul/api"
+	"strings"
 )
 
 var (
@@ -29,15 +30,16 @@ func init() {
 type SimpleConsulKVValueResolver struct {
 }
 
-func (resolver *SimpleConsulKVValueResolver) ResolveValue(toResolve string) (interface{}, error) {
-	key := "flogo/" + app.GetName() + "/" + toResolve
+func (resolver *SimpleConsulKVValueResolver) ResolveValue(key string) (interface{}, error) {
+	key = strings.Replace(key, ".", "/", -1)
+	consul_key := "flogo/" + app.GetName() + "/" + key
 
-	pair, _, err := kv.Get(key, nil)
+	pair, _, err := kv.Get(consul_key, nil)
 
 	var value interface{}
 
 	if err != nil || pair == nil {
-		log.Warnf("Property '%s' is not found in Consul.", toResolve)
+		log.Warnf("Property '%s' is not found in Consul.", key)
 
 		value = nil // will use default value
 	} else {
