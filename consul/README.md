@@ -80,7 +80,7 @@ flogo ensure
 5. add a property ```log.message``` and use it in the log activity
 ```
 cat flogo.json | \
-jq '. + {"properties": [{"name": "message", "type": "string", "value": "Default message"}]}' | \
+jq '. + {"properties": [{"name": "log.message", "type": "string", "value": "Default message"}]}' | \
 jq '.resources[].data.tasks[].activity |= . + {"mappings": {"input": [{"type": "assign", "value": "$property[log.message]", "mapTo": "message"}]}}' | \
 jq '.resources[].data.tasks[].activity.input |= del(.message)' \
 > flogo.json.tmp && mv flogo.json.tmp flogo.json
@@ -105,9 +105,9 @@ docker exec -t dev-consul consul kv put flogo/simple-config/log/message "Consul 
 
 * The key is prefixed by ```flogo``` and by the application name (```simple-config```).
 
-* Notice that the property is using the
+* Notice that the property ```log.message``` created above in *flogo.json* is using the
 [standard way of grouping properties](https://tibcosoftware.github.io/flogo/development/flows/property-bag/#grouping-of-properties)
-with a dot separator. All dots in properties names are replaced by forward slashes before resolving in Consul,
+with a dot separator. All dots in properties names are replaced by forward slashes before being resolved in Consul,
 leveraging the hierarchical paradigm of the Consul key/value store.
 
 ### Run & test 
@@ -171,9 +171,12 @@ You should see a log like:
 INFO   [activity-flogo-log] - Profile file message
 ```
 
-The property value in the profile file has overridden Consul.
+The property value in the profile file has overridden the Consul value.
+
 The Consul API is not even called since the value of the property was resolved successfully by a resolver with a higher
 priority.
+
+However the Consul resolver is still configured and active for potential other properties to resolve.
 
 #### with Consul, overriding with an environment variable
 
@@ -182,7 +185,7 @@ priority.
 export CONSUL_HTTP_ADDR=127.0.0.1:8500         # optional as it is the default value
 export FLOGO_APP_CONFIG_EXTERNAL=consul        # enable the Consul external property resolver
 export FLOGO_APP_CONFIG_PROFILES=profile.json  # override with a property value in a JSON profile file
-export LOG_MESSAGE="Env var message"           # override with an (canonical) environment variable
+export LOG_MESSAGE="Env var message"           # override with a (canonical) environment variable
 ```
 
 2. run the application
@@ -195,9 +198,24 @@ You should see a log like:
 INFO   [activity-flogo-log] - Env var message
 ```
 
-The environment variable has overridden Consul.
+The environment variable has overridden the Consul value **and** the profile file value.
+
 The Consul API is not even called since the value of the property was resolved successfully by a resolver with a higher
 priority.
+
+However the Consul resolver **and** the profile file resolver are still configured and active for potential other
+properties to resolve.
+
+### Teardown
+
+```
+docker rm -f dev-consul
+
+unset CONSUL_HTTP_ADDR
+unset FLOGO_APP_CONFIG_ENV_VARS
+unset FLOGO_APP_CONFIG_EXTERNAL
+unset LOG_MESSAGE
+```
 
 ## Configuration
 
