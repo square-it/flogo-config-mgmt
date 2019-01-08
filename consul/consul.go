@@ -1,28 +1,34 @@
 package consul
 
 import (
-	"github.com/TIBCOSoftware/flogo-lib/app"
-	"github.com/TIBCOSoftware/flogo-lib/logger"
 	"github.com/hashicorp/consul/api"
+	"github.com/project-flogo/core/data/property"
+	"github.com/project-flogo/core/engine"
+	"github.com/project-flogo/core/support/log"
 	"strings"
 )
 
 var (
-	kv  *api.KV
-	log = logger.GetLogger("config-mgmt-consul-kv")
+	kv     *api.KV
+	logger = log.ChildLogger(log.RootLogger(), "consul-resolver")
 )
 
 func init() {
+	logger := log.RootLogger()
+
 	client, err := api.NewClient(api.DefaultConfig())
 	if err != nil {
-		log.Error("Unable to initialize Consul property resolver for configuration management.")
+		logger.Error("Unable to initialize Consul property resolver for configuration management.")
 	}
 
 	kv = client.KV()
 
-	err = app.RegisterPropertyValueResolver("consul", &SimpleConsulKVValueResolver{})
+	logger.Debug("Registering Consul resolver")
+
+	err = property.RegisterPropertyResolver(&SimpleConsulKVValueResolver{})
+
 	if err != nil {
-		log.Error("Unable to register Consul property resolver for configuration management.")
+		logger.Error("Unable to register Consul property resolver for configuration management.")
 	}
 }
 
@@ -30,21 +36,22 @@ func init() {
 type SimpleConsulKVValueResolver struct {
 }
 
-func (resolver *SimpleConsulKVValueResolver) ResolveValue(key string) (interface{}, error) {
+func (resolver *SimpleConsulKVValueResolver) Name() string {
+	return "consul"
+}
+
+func (resolver *SimpleConsulKVValueResolver) LookupValue(key string) (interface{}, bool) {
 	key = strings.Replace(key, ".", "/", -1)
-	consul_key := "flogo/" + app.GetName() + "/" + key
+
+	consul_key := "flogo/" + engine.GetAppName() + "/" + key
 
 	pair, _, err := kv.Get(consul_key, nil)
 
-	var value interface{}
-
 	if err != nil || pair == nil {
-		log.Warnf("Property '%s' is not found in Consul.", key)
+		logger.Warnf("Property '%s' is not found in Consul.", key)
 
-		value = nil // will use default value
-	} else {
-		value = string(pair.Value)
+		return nil, false // will use default value
 	}
 
-	return value, nil
+	return string(pair.Value), true
 }

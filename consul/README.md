@@ -1,51 +1,19 @@
 # Centralized configuration management for Flogo with a Consul key/value store 
 
-> **WARNING**: This contribution is in an experimental state and uses a patched version of _TIBCOSoftware/flogo-lib_.
-
-## About properties resolution in Flogo
-
-> **WARNING**: This description is true *only in this experimentation* until
-[TIBCOSoftware/flogo-lib#255](https://github.com/TIBCOSoftware/flogo-lib/pull/255) is merged.
-
-Properties are defined in the *flogo.json* configuration file in the *properties* array. For instance:
-```json 
-  "properties": [
-    {
-      "name": "log.message",
-      "type": "string",
-      "value": "Default message"
-    }
-  ]
-```
-
-Properties values can be resolved by different methods:
-* **Environment variables**: simplest method when deploying the application in containers (Docker, Kubernetes, ...)
-* **Profile files**: best method to define different *profiles* of properties such as *dev*, *integration*, *prod*
-* **External resolver**: can be any system supported by a Flogo contribution (as this one for Consul).
-The contribution must be installed in the application using standard ``` flogo install``` command
-* **Default**: use the value specified in the *flogo.json* configuration file of the application
-
-The defined order for properties resolution is as follows:
-
-> Environment variable **>** profile file (JSON) **>** external (Consul) **>** default value
-
-* This priority order is statically defined.
-* Each method is called only if it is enabled (see [Configuration](#configuration)).
-* Each property uses the value from the first method succeeding.
-* Resolution is performed at the start of the Flogo engine and properties are then cached during the lifetime of the
-application.
+Before proceeding, read the
+[introduction of properties resolution in Flogo](../README.md#about-properties-resolution-in-flogo).
 
 ## Requirements
 
-* Go
-* Go dep
-* Flogo, at least v0.5.7
-* Docker, for testing purpose only
-* jq, to simplify the creation of the project only
+* [Go language](https://golang.org) 1.11+ (with modules support enabled)
+* [Flogo CLI](https://github.com/project-flogo/cli)
+* [Docker](https://www.docker.com/get-started), for testing purpose only
+* [jq](https://stedolan.github.io/jq/), to simplify the creation of the project only
 
 ## Usage
 
-Let's demonstrate the resolution of properties with this Consul-based contribution (and with built-in methods too). 
+Let's demonstrate the resolution of properties with this Consul-based contribution, in collaboration (or not) with
+built-in *resolvers*. 
 
 ### Create a Flogo project
 
@@ -57,27 +25,15 @@ cd simple-config
 
 2. install this contribution
 ```
-flogo install -v simple-consul-kv github.com/square-it/flogo-config-mgmt/consul
+flogo install github.com/square-it/flogo-config-mgmt/consul
 ```
 
-3. use patched version of TIBCOSoftware/flogo-lib
+3. install the builtin resolvers
 ```
-cat << EOF >> ./src/simple-config/Gopkg.toml                                                    
-
-[[override]]
-  name = "github.com/TIBCOSoftware/flogo-lib"
-  branch = "external-config-mgmt"
-  source = "github.com/square-it/flogo-lib"
-
-EOF
+flogo install github.com/project-flogo/core/app/propertyresolver
 ```
 
-4. ensure dependencies
-```
-flogo ensure
-```
-
-5. add a property ```log.message``` and use it in the log activity
+4. add a property ```log.message``` and use it in the log activity
 ```
 cat flogo.json | \
 jq '. + {"properties": [{"name": "log.message", "type": "string", "value": "Default message"}]}' | \
@@ -86,9 +42,9 @@ jq '.resources[].data.tasks[].activity.input |= del(.message)' \
 > flogo.json.tmp && mv flogo.json.tmp flogo.json
 ```
 
-6. build the application
+5. build the application
 ```
-flogo build -e
+flogo build
 ```
 
 ### Prepare a Consul key-value store
@@ -114,27 +70,9 @@ leveraging the hierarchical paradigm of the Consul key/value store.
 
 #### without Consul
 
-1. run the application
+1. disable all property resolvers
 ```
-./bin/simple-config
-```
-
-2. in another terminal
-```
-curl http://127.0.0.1:9233/test
-```
-
-You should see a log like:
-```
-INFO   [activity-flogo-log] - Default message
-```
-
-#### with Consul 
-
-1. set following environment variables
-```
-export CONSUL_HTTP_ADDR=127.0.0.1:8500         # optional as it is the default value
-export FLOGO_APP_CONFIG_EXTERNAL=consul        # enable the Consul external property resolver
+export FLOGO_APP_PROP_RESOLVERS=disabled         # ensure none of the registered property resolvers is enabled
 ```
 
 2. run the application
@@ -142,23 +80,55 @@ export FLOGO_APP_CONFIG_EXTERNAL=consul        # enable the Consul external prop
 ./bin/simple-config
 ```
 
+3. in another terminal
+```
+curl http://127.0.0.1:8888/test/hello
+```
+
 You should see a log like:
 ```
-INFO   [activity-flogo-log] - Consul message
+INFO    [flogo.activity.log] -  Default message
 ```
 
-#### with Consul, overriding with a profile file
+#### with Consul 
 
-1. create a JSON profile file with an overridden value for ```log.message```
+1. set following environment variables
 ```
-echo '{"log.message": "Profile file message"}' | jq '.' > profile.json
+export CONSUL_HTTP_ADDR=127.0.0.1:8500           # optional as it is the default value
+
+export FLOGO_APP_PROP_RESOLVERS=consul           # enable only the Consul property resolver
+
+# or simply unset FLOGO_APP_PROP_RESOLVERS to use default behaviour
+unset FLOGO_APP_PROP_RESOLVERS                   # enable all resolvers & the Consul one will have the highest priority
+```
+
+2. run the application
+```
+./bin/simple-config
+```
+
+3. in another terminal
+```
+curl http://127.0.0.1:8888/test/hello
+```
+
+You should see a log like:
+```
+INFO    [flogo.activity.log] -  Consul message
+```
+
+#### with Consul, overriding with a JSON file
+
+1. create a JSON file with an overridden value for ```log.message```
+```
+echo '{"log.message": "JSON file message"}' | jq '.' > config.json
 ```
 
 2. set following environment variables
 ```
-export CONSUL_HTTP_ADDR=127.0.0.1:8500         # optional as it is the default value
-export FLOGO_APP_CONFIG_EXTERNAL=consul        # enable the Consul external property resolver
-export FLOGO_APP_CONFIG_PROFILES=profile.json  # override with a property value in a JSON profile file
+export CONSUL_HTTP_ADDR=127.0.0.1:8500           # optional as it is the default value
+export FLOGO_APP_PROP_RESOLVERS=json,consul      # enable the JSON files resolver & the Consul property resolver 
+export FLOGO_APP_PROPS_JSON=config.json          # override with a property value in a JSON file
 ```
 
 3. run the application
@@ -166,12 +136,17 @@ export FLOGO_APP_CONFIG_PROFILES=profile.json  # override with a property value 
 ./bin/simple-config
 ```
 
-You should see a log like:
+4. in another terminal
 ```
-INFO   [activity-flogo-log] - Profile file message
+curl http://127.0.0.1:8888/test/hello
 ```
 
-The property value in the profile file has overridden the Consul value.
+You should see a log like:
+```
+INFO    [flogo.activity.log] -  JSON file message
+```
+
+The property value in the JSON config file has overridden the Consul value.
 
 The Consul API is not even called since the value of the property was resolved successfully by a resolver with a higher
 priority.
@@ -182,10 +157,10 @@ However the Consul resolver is still configured and active for potential other p
 
 1. set following environment variables
 ```
-export CONSUL_HTTP_ADDR=127.0.0.1:8500         # optional as it is the default value
-export FLOGO_APP_CONFIG_EXTERNAL=consul        # enable the Consul external property resolver
-export FLOGO_APP_CONFIG_PROFILES=profile.json  # override with a property value in a JSON profile file
-export LOG_MESSAGE="Env var message"           # override with a (canonical) environment variable
+export CONSUL_HTTP_ADDR=127.0.0.1:8500           # optional as it is the default value
+export FLOGO_APP_PROP_RESOLVERS=env,json,consul  # enable the environment variable resolver & the other resolvers
+export FLOGO_APP_PROPS_JSON=config.json          # override with a property value in a JSON file 
+export LOG_MESSAGE="Env var message"             # override with a (canonical) environment variable
 ```
 
 2. run the application
@@ -193,45 +168,53 @@ export LOG_MESSAGE="Env var message"           # override with a (canonical) env
 ./bin/simple-config
 ```
 
-You should see a log like:
+3. in another terminal
 ```
-INFO   [activity-flogo-log] - Env var message
+curl http://127.0.0.1:8888/test/hello
 ```
 
-The environment variable has overridden the Consul value **and** the profile file value.
+You should see a log like:
+```
+INFO    [flogo.activity.log] -  Env var message
+```
+
+The environment variable has overridden the Consul value **and** the JSON file value.
 
 The Consul API is not even called since the value of the property was resolved successfully by a resolver with a higher
 priority.
 
-However the Consul resolver **and** the profile file resolver are still configured and active for potential other
+However the Consul resolver **and** the JSON file resolver are still configured and active for potential other
 properties to resolve.
 
 ### Teardown
+
+To cleanup the environment after the tests:
 
 ```
 docker rm -f dev-consul
 
 unset CONSUL_HTTP_ADDR
-unset FLOGO_APP_CONFIG_ENV_VARS
-unset FLOGO_APP_CONFIG_EXTERNAL
+unset FLOGO_APP_PROP_RESOLVERS
+unset FLOGO_APP_PROPS_JSON
 unset LOG_MESSAGE
 ```
 
 ## Configuration
 
-The configuration is set by a very limited set of environment variables. Some (three) are builtin in the Flogo engine,
-the others are defined by external resolvers such as this current one.
+The configuration is set by a very limited set of environment variables. All of them have default values.
 
 ### Flogo level
 
-| Name                       | Default value | Required                      | Example value                                      |
-|----------------------------|---------------|-------------------------------|----------------------------------------------------|
-| FLOGO_APP_CONFIG_ENV_VARS  | true          | no                            | false, to disable environment variables resolution |
-| FLOGO_APP_CONFIG_PROFILES  | ø             | for "file" resolver only      | "default.json", "common.json,prod.json"            |
-| FLOGO_APP_CONFIG_EXTERNAL  | ø             | for "external" resolvers only | "consul", "etcd", ...                              |
+| Name                       | Required                                              | Default value     | Example value                                              |
+|----------------------------|-------------------------------------------------------|-------------------|------------------------------------------------------------|
+| FLOGO_APP_PROP_RESOLVERS   | only when two or more custom resolvers are registered | "consul,env,json" | "consul,env", "consul", "json,env", "consul,etcd,env", ... |
+| FLOGO_APP_PROPS_JSON       | for "json" resolver only                              | ø                 | "default.json", "common.json,prod.json"                    |
+
+> Default value of ```FLOGO_APP_PROP_RESOLVERS``` is computed when only a single custom *resolver* is registered.
+Otherwise, it must be set explicitly.
 
 ### Consul level
 
-| Name              | Default value   | Required | Example value           |
-|-------------------|-----------------|----------|-------------------------|
-| CONSUL_HTTP_ADDR  | 127.0.0.1:8500  | no       | consul.company.com:8500 |
+| Name             | Required | Default value    | Example value           |
+|------------------|----------|------------------|-------------------------|
+| CONSUL_HTTP_ADDR | no       | 127.0.0.1:8500   | consul.company.com:8500 |
