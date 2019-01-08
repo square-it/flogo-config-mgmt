@@ -1,1 +1,0 @@
-package flogo_config_mgmt
