@@ -1,11 +1,11 @@
 # Centralized configuration management for Flogo with a Consul key/value store 
 
-> **WARNING**: This contribution is in an experimental state and uses a patched version of _TIBCOSoftware/flogo-lib_.
+> **WARNING**: This contribution is in an experimental state and uses a patched version of _project-flogo/core_.
 
 ## About properties resolution in Flogo
 
 > **WARNING**: This description is true *only in this experimentation* until
-[TIBCOSoftware/flogo-lib#255](https://github.com/TIBCOSoftware/flogo-lib/pull/255) is merged.
+[core/pull#9](https://github.com/project-flogo/core/pull/9) is merged.
 
 Properties are defined in the *flogo.json* configuration file in the *properties* array. For instance:
 ```json 
@@ -37,9 +37,8 @@ application.
 
 ## Requirements
 
-* Go
-* Go dep
-* Flogo, at least v0.5.7
+* Go >= 1.11 (with modules support enabled)
+* Flogo, at least v0.9.0-alpha3
 * Docker, for testing purpose only
 * jq, to simplify the creation of the project only
 
@@ -57,27 +56,15 @@ cd simple-config
 
 2. install this contribution
 ```
-flogo install -v simple-consul-kv github.com/square-it/flogo-config-mgmt/consul
+flogo install github.com/square-it/flogo-config-mgmt/consul
 ```
 
-3. use patched version of TIBCOSoftware/flogo-lib
+3. use patched version of project-core/flow
 ```
-cat << EOF >> ./src/simple-config/Gopkg.toml                                                    
-
-[[override]]
-  name = "github.com/TIBCOSoftware/flogo-lib"
-  branch = "external-config-mgmt"
-  source = "github.com/square-it/flogo-lib"
-
-EOF
+sed -i 's|github.com/project-flogo/core .*|github.com/project-flogo/core external_prop_resolve|' ./src/go.mod
 ```
 
-4. ensure dependencies
-```
-flogo ensure
-```
-
-5. add a property ```log.message``` and use it in the log activity
+4. add a property ```log.message``` and use it in the log activity
 ```
 cat flogo.json | \
 jq '. + {"properties": [{"name": "log.message", "type": "string", "value": "Default message"}]}' | \
@@ -86,9 +73,9 @@ jq '.resources[].data.tasks[].activity.input |= del(.message)' \
 > flogo.json.tmp && mv flogo.json.tmp flogo.json
 ```
 
-6. build the application
+5. build the application
 ```
-flogo build -e
+flogo build
 ```
 
 ### Prepare a Consul key-value store
