@@ -9,7 +9,6 @@ import (
 )
 
 var (
-	kv     *api.KV
 	logger = log.ChildLogger(log.RootLogger(), "consul-resolver")
 )
 
@@ -19,14 +18,13 @@ func init() {
 	client, err := api.NewClient(api.DefaultConfig())
 	if err != nil {
 		logger.Error("Unable to initialize Consul property resolver for configuration management.")
+		return
 	}
 
-	kv = client.KV()
+	simpleConsulKVValueResolver := SimpleConsulKVValueResolver{consulKVClient: client.KV()}
 
 	logger.Debug("Registering Consul resolver")
-
-	err = property.RegisterExternalResolver("consul", &SimpleConsulKVValueResolver{})
-
+	err = property.RegisterExternalResolver("consul", &simpleConsulKVValueResolver)
 	if err != nil {
 		logger.Error("Unable to register Consul property resolver for configuration management.")
 	}
@@ -34,14 +32,15 @@ func init() {
 
 // Resolve property value from a Consul KV Store
 type SimpleConsulKVValueResolver struct {
+	consulKVClient *api.KV
 }
 
 func (resolver *SimpleConsulKVValueResolver) LookupValue(key string) (interface{}, bool) {
 	key = strings.Replace(key, ".", "/", -1)
 
-	consul_key := "flogo/" + engine.GetAppName() + "/" + key
+	consulKey := "flogo/" + engine.GetAppName() + "/" + key
 
-	pair, _, err := kv.Get(consul_key, nil)
+	pair, _, err := resolver.consulKVClient.Get(consulKey, nil)
 
 	var value interface{}
 
