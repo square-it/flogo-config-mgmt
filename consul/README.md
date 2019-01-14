@@ -34,8 +34,8 @@ application.
 
 ## Requirements
 
-* Go >= 1.11 (with modules support enabled)
-* Flogo >= v0.9.0-alpha4
+* Go >= 1.11 (with [modules support enabled](https://github.com/golang/go/wiki/Modules#how-to-install-and-activate-module-support))
+* Flogo >= v0.9.0-alpha4 (use [new CLI](https://github.com/project-flogo/cli))
 * Docker, for testing purpose only
 * jq, to simplify the creation of the project only
 
