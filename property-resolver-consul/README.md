@@ -53,12 +53,8 @@ cd simple-config
 
 2. install this contribution
 ```
-go mod edit -require github.com/square-it/flogo-config-mgmt/property-resolver-consul@simple-consul-kv ./src/go.mod
-sed -i 's|^)$|        _ "github.com/square-it/flogo-config-mgmt/property-resolver-consul"\n)|' ./src/imports.go
-```
-
-> Currently Flogo CLI is only able to install contribution from their master branch.
-As a consequence we do a manual installation with ```go mod``` and ```sed```. 
+flogo install github.com/square-it/flogo-config-mgmt/property-resolver-consul
+``` 
 
 3. add a property ```log.message``` and use it in the log activity
 ```
