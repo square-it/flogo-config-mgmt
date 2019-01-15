@@ -1,0 +1,8 @@
+{
+  "name": "consul-property-resolver",
+  "type": "flogo:property-resolver",
+  "version": "0.0.1",
+  "title": "Consul property resolver",
+  "description": "Load Flogo application properties from a Consul key-value store",
+  "homepage": "https://github.com/square-it/flogo-config-mgmt/tree/master/property-resolver-consul"
+}
