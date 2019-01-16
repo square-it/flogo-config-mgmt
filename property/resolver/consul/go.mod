@@ -1,4 +1,4 @@
-module github.com/square-it/flogo-config-mgmt/property-resolver-consul
+module github.com/square-it/flogo-config-mgmt/property/resolver/consul
 
 require (
 	github.com/hashicorp/consul v1.4.0
