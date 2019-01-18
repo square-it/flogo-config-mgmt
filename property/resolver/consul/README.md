@@ -23,10 +23,10 @@ allows to load properties from one or several JSON files (common.json, dev.json/
 * **Others**: other *resolvers* can be provided by Flogo contributions (as this one for Consul).
 These contributions are installed in the application using standard ``` flogo install``` command.
 
-These *resolvers* can be enabled and chained using the ```FLOGO_APP_PROP_RESOLVERS``` environment variable.
+These *resolvers* can be enabled and chained using the ```FLOGO_APP_PROPS_RESOLVERS``` environment variable.
 It means that defined resolvers will be used to resolve properties as follows:
 
-* The priority order is following the order of declaration in ```FLOGO_APP_PROP_RESOLVERS```.
+* The priority order is following the order of declaration in ```FLOGO_APP_PROPS_RESOLVERS```.
 * Each property uses the value from the first *resolver* succeeding (independently of other properties).
 * If no *resolver* returns a value for a property, its default value from *flogo.json* is used.
 * Resolution is performed at the start of the Flogo engine and properties are then cached during the lifetime of the
@@ -112,7 +112,7 @@ INFO	[flogo.activity.log] -	Default message
 1. set following environment variables
 ```
 export CONSUL_HTTP_ADDR=127.0.0.1:8500          # optional as it is the default value
-export FLOGO_APP_PROP_RESOLVERS=consul          # enable the Consul property resolver
+export FLOGO_APP_PROPS_RESOLVERS=consul          # enable the Consul property resolver
 ```
 
 2. run the application
@@ -147,7 +147,7 @@ flogo build
 3. set following environment variables
 ```
 export CONSUL_HTTP_ADDR=127.0.0.1:8500          # optional as it is the default value
-export FLOGO_APP_PROP_RESOLVERS=json,consul     # enable the built-in JSON property resolver and Consul property resolver, in this order
+export FLOGO_APP_PROPS_RESOLVERS=json,consul     # enable the built-in JSON property resolver and Consul property resolver, in this order
 export FLOGO_APP_PROPS_JSON=profile.json        # override with a property value in a JSON profile file
 ```
 
@@ -185,7 +185,7 @@ flogo build
 2. set following environment variables
 ```
 export CONSUL_HTTP_ADDR=127.0.0.1:8500          # optional as it is the default value
-export FLOGO_APP_PROP_RESOLVERS=env,json,consul # enable the Consul external property resolver
+export FLOGO_APP_PROPS_RESOLVERS=env,json,consul # enable the Consul external property resolver
 export FLOGO_APP_PROPS_JSON=profile.json        # override with a property value in a JSON profile file
 export LOG_MESSAGE="Env var message"            # override with a (canonical) environment variable
 ```
@@ -219,7 +219,7 @@ properties to resolve.
 docker rm -f dev-consul
 
 unset CONSUL_HTTP_ADDR
-unset FLOGO_APP_PROP_RESOLVERS
+unset FLOGO_APP_PROPS_RESOLVERS
 unset FLOGO_APP_PROPS_JSON
 unset LOG_MESSAGE
 ```
@@ -227,14 +227,14 @@ unset LOG_MESSAGE
 ## Configuration
 
 The configuration of this Consul property resolver is set by putting "consul" in the comma-separated
-```FLOGO_APP_PROP_RESOLVERS``` environment variable and configuring the Consul backend with its own environment
+```FLOGO_APP_PROPS_RESOLVERS``` environment variable and configuring the Consul backend with its own environment
 variables.
 
 ### Flogo level
 
 | Name                       | Default value | Required                      | Example value                                 |
 |----------------------------|---------------|-------------------------------|-----------------------------------------------|
-| FLOGO_APP_PROP_RESOLVERS   | ø             | yes                           | "consul", "consul,env", "env,consul,json" ... |
+| FLOGO_APP_PROPS_RESOLVERS   | ø             | yes                           | "consul", "consul,env", "env,consul,json" ... |
 
 ### Consul level
 
